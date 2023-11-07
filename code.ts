@@ -24,6 +24,7 @@ function onOpen(e) {
  */
 function resetPagination() {
   userProperties.deleteProperty('nextToken');
+  userProperties.deleteProperty('dialogShownFlag');
   showAlert({
     title: 'Data pagination restarted',
     message: 'Next time you make a reuqest it will start from the first inventory item'
@@ -44,14 +45,21 @@ function resetPagination() {
 function fetchInventory(nextToken = '') {
   const storedToken = userProperties.getProperty('nextToken') || '';
 
-  if (!storedToken) {
+  const dialogShownFlag = userProperties.getProperty('dialogShownFlag');
+
+  if (!storedToken && !dialogShownFlag) {
     // Display a dialog box with a message and "Yes" and "No" buttons. The user can also close the
     // dialog by clicking the close button in its title bar.
     const ui = SpreadsheetApp.getUi();
-    const userResponse = ui.alert('Are you sure you want to continue? You are about to start fetching from first inventory item', ui.ButtonSet.YES_NO);
+    var userResponse = ui.alert('Are you sure you want to continue? You are about to start fetching from the first inventory item', ui.ButtonSet.YES_NO);
 
     // Process the user's userResponse.
-    if (userResponse != ui.Button.YES) return false;
+    if (userResponse == ui.Button.NO) {
+      return false;
+    } else {
+      // Set a flag to indicate that the dialog has been shown.
+      userProperties.setProperty('dialogShownFlag', 'true');
+    }
   }
 
   var details = true;
@@ -106,6 +114,7 @@ function fetchInventory(nextToken = '') {
       });
     } else {
       userProperties.deleteProperty('nextToken');
+      userProperties.deleteProperty('dialogShownFlag');
       showAlert({
         title: 'Fetch Complete',
         message: "There are no more data to fetch. You've completed fetching all data"
